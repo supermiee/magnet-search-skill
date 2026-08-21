@@ -1,72 +1,55 @@
 # Usage examples
 
-## Example 1: exact catalog number
+## Triggered
 
-User:
+```text
+/magnet SSIS-123
+```
+
+Expected behavior:
+
+- Classify as JAV.
+- Search the best 1-2 currently usable specialist sources first.
+- Try the exact catalog number and a normalized variant.
+- Stop when enough high-confidence results are found.
+
+## Triggered: Chinese / Asian
+
+```text
+/magnet <resource title>
+```
+
+Expected behavior:
+
+- Determine whether the metadata indicates Chinese/Asian content.
+- Search Asian-oriented sources first.
+- Broaden only if the first results are insufficient.
+
+## Triggered: adult anime / doujin
+
+```text
+/magnet <anime title>
+```
+
+Expected behavior:
+
+- Prefer original Japanese or English title.
+- Search the specialist anime/NSFW sources first.
+- Deduplicate identical InfoHashes.
+
+## Not triggered
+
+These must **not** activate the skill:
 
 ```text
 SSIS-123
+帮我看看这个资源是什么
+magnet:?xt=urn:btih:...
+今天天气怎么样
 ```
 
-Expected agent behavior:
+The user must explicitly use the `/magnet` prefix.
 
-1. Classify as JAV.
-2. Search the exact catalog number first on specialist sources.
-3. Try normalized variants such as `SSIS-123` and `SSIS123` when useful.
-4. Prefer exact identifier matches over title-only matches.
-5. Stop early if enough high-confidence results are found.
+## Duplicate results
 
-## Example 2: Chinese/Asian title
-
-User:
-
-```text
-<resource title>
-```
-
-Expected behavior:
-
-1. Classify as Chinese/Asian if the metadata indicates that category.
-2. Try the supplied Chinese title, original-language title and English title.
-3. Search Asian-oriented sources first.
-4. Fall back to general torrent search if necessary.
-
-## Example 3: adult anime
-
-User:
-
-```text
-<anime title>
-```
-
-Expected behavior:
-
-1. Classify as anime/doujin when metadata indicates it.
-2. Prefer the original Japanese title and English title.
-3. Search Nyaa/Sukebei-oriented sources first.
-4. Deduplicate identical InfoHashes.
-
-## Example 4: insufficient results
-
-If the first source returns no useful candidates:
-
-```text
-specialist source
-  -> second specialist source
-  -> regional/general source
-  -> broad fallback source
-```
-
-Do not report "not found" until the configured search stages have been exhausted or the user explicitly requests a limited search.
-
-## Example 5: duplicate results
-
-If three websites return the same InfoHash:
-
-```text
-Result A
-  InfoHash: abc123...
-  Sources: Sukebei, U9A9, Bitsearch
-```
-
-Show one result rather than three duplicate magnets.
+If multiple sources return the same InfoHash, show one result and merge the source names.
