@@ -1,0 +1,84 @@
+# Torrent/magnet source registry
+#
+# This file is intentionally separate from SKILL.md so source URLs and
+# priorities can be updated without changing the agent's search logic.
+# Verify availability and legality before use.
+
+sources:
+  - name: Sukebei Nyaa
+    url: https://sukebei.nyaa.si/
+    categories: [jav, hentai, anime, doujin]
+    priority: 100
+    notes: "Specialized Nyaa index for adult/NSFW and doujin content."
+
+  - name: OneJAV
+    url: https://onejav.com/
+    categories: [jav]
+    priority: 90
+    notes: "JAV-focused search/index site."
+
+  - name: JAVJunkies
+    url: https://javjunkies.com/
+    categories: [jav]
+    priority: 80
+    notes: "JAV-focused source; verify current availability before use."
+
+  - name: U9A9
+    url: https://u9a9.com/
+    categories: [asian, chinese, jav]
+    priority: 100
+    notes: "Asian/Chinese-oriented magnet search source."
+
+  - name: BTSOW
+    url: https://btsow.live/
+    categories: [asian, chinese, general]
+    priority: 90
+    notes: "General magnet search/aggregation source."
+
+  - name: Sehuatang
+    url: https://www.sehuatang.net/
+    categories: [asian, chinese]
+    priority: 80
+    notes: "Chinese-language community/source; access may require an account or may vary by region."
+
+  - name: Nyaa
+    url: https://nyaa.si/
+    categories: [anime, doujin, asian]
+    priority: 90
+    notes: "Major anime/Asian torrent index."
+
+  - name: SolidTorrents
+    url: https://solidtorrents.to/
+    categories: [general, asian, jav, anime]
+    priority: 70
+    notes: "General torrent search/index."
+
+  - name: Bitsearch
+    url: https://bitsearch.to/
+    categories: [general, asian, jav, anime]
+    priority: 70
+    notes: "General torrent search; useful as a fallback."
+
+  - name: BT4G
+    url: https://bt4gprx.com/
+    categories: [general, asian]
+    priority: 60
+    notes: "General/DHT-oriented search source; verify the current domain before use."
+
+  - name: 1337x
+    url: https://1337x.to/
+    categories: [general]
+    priority: 60
+    notes: "General torrent index."
+
+  - name: TorrentGalaxy
+    url: https://torrentgalaxy.to/
+    categories: [general]
+    priority: 55
+    notes: "General torrent index with strong video coverage."
+
+  - name: The Pirate Bay
+    url: https://thepiratebay.org/
+    categories: [general]
+    priority: 50
+    notes: "General legacy torrent index; use as a last-resort fallback and verify the official/current domain."
