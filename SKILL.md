@@ -2,7 +2,7 @@
 
 ## Trigger
 
-This skill is **explicitly triggered only when the user message starts with `/magnet`**.
+Activate this skill **only when the user message starts with `/magnet`**.
 
 Examples:
 
@@ -12,17 +12,17 @@ Examples:
 /magnet "完整资源标题"
 ```
 
-Do **not** activate this skill for ordinary conversation, ordinary resource names, casual questions, or a standalone magnet/torrent URL.
+Do not activate for ordinary conversation, casual mentions of resource names, or a standalone magnet/torrent URL.
 
-Remove the `/magnet` prefix before searching.
+Remove `/magnet` before searching.
 
 ## Purpose
 
-When triggered, identify the resource type, search the most relevant configured sources, broaden the search only when needed, deduplicate results, and return the best matches.
+When triggered, identify the resource type, choose the most relevant configured sources, search in stages, validate that a result is actually a torrent/magnet result, deduplicate, and rank.
 
-Use only for resources the user is legally entitled to access. Do not bypass authentication, paywalls, CAPTCHAs, DRM, or other access controls.
+Use only for content the user is legally entitled to access. Do not bypass authentication, paywalls, CAPTCHAs, DRM, or access controls.
 
-## Simple workflow
+## Workflow
 
 ```text
 /magnet <query>
@@ -30,6 +30,7 @@ Use only for resources the user is legally entitled to access. Do not bypass aut
   -> normalize query
   -> choose 1-2 best sources
   -> search
+  -> validate real torrent metadata
   -> enough good results?
        yes -> stop
        no  -> broaden to fallback sources
@@ -44,9 +45,9 @@ Do not search every source by default.
 
 ### JAV / Japanese adult video
 
-Look for catalog-number patterns or clear JAV metadata.
+Detect catalog-number patterns or clear JAV metadata.
 
-Preferred sources, in configured priority order:
+Preferred sources:
 
 1. Sukebei Nyaa
 2. OneJAV
@@ -54,7 +55,7 @@ Preferred sources, in configured priority order:
 4. U9A9
 5. BTSOW
 
-For catalog numbers, search:
+For catalog numbers, try:
 
 ```text
 exact number
@@ -84,7 +85,7 @@ Preferred sources:
 4. BTSOW
 5. Bitsearch
 
-Prefer original Japanese or English titles over translated titles when available.
+Prefer original Japanese or English titles when available.
 
 ### General fallback
 
@@ -105,11 +106,11 @@ Use `config/sources.yaml` as the source registry.
 - `redirect`: prefer `canonical_url` when present.
 - `inconclusive`: last check did not establish availability; re-check before relying on it.
 
-If a source is unreachable, skip it and continue. Do not repeatedly retry one failed source.
+If a source is unreachable, skip it. Do not repeatedly retry one failed source.
 
 ## Query handling
 
-Extract, when present:
+Extract when present:
 
 - catalog number / work ID
 - title
@@ -121,25 +122,56 @@ Extract, when present:
 
 Normalize whitespace and obvious punctuation variants, but never silently change identifiers.
 
-For catalog numbers, try both hyphenated and compact forms when appropriate.
+For catalog numbers, try hyphenated and compact forms when appropriate.
+
+## Torrent-result validation
+
+This is mandatory. **Do not classify a normal webpage as a torrent/magnet result.**
+
+A result is a **valid magnet candidate** only when the source exposes at least one of:
+
+- a complete `magnet:` URI; or
+- a verified InfoHash associated with a torrent/magnet record.
+
+Prefer results that also expose torrent metadata such as:
+
+- title
+- size
+- seeders/leechers
+- file count or file list
+- publication/update time
+
+The following are **metadata only**, not magnet results:
+
+- movie/episode detail pages
+- subtitle pages
+- reviews
+- screenshots/image pages
+- ordinary search-engine results
+- pages that merely mention an InfoHash without an actual torrent/magnet record
+
+If only metadata is found, report it as `元数据线索`, not as a downloadable magnet result.
+
+Never invent or reconstruct a Magnet URI from incomplete information.
 
 ## Result ranking
 
 Prefer:
 
 1. exact identifier/title match
-2. matching actor/creator
-3. complete and plausible file metadata
-4. higher seed count
-5. newer result
+2. verified torrent/magnet metadata
+3. matching actor/creator
+4. complete and plausible file metadata
+5. higher seed count
+6. newer result
 
 Use InfoHash as the primary deduplication key. If the same InfoHash appears on multiple sources, merge them into one result.
 
-A weakly matching high-seed result should not outrank a strong exact match merely because it has more seeds.
+A weakly matching high-seed result must not outrank a strong exact match merely because it has more seeds.
 
 ## Output
 
-Return up to 5 unique results.
+Return up to 5 unique **verified magnet candidates**.
 
 For each result show:
 
@@ -153,9 +185,13 @@ InfoHash:
 Magnet:
 ```
 
-Use `精确匹配` for strong identifier/title matches and `疑似匹配` for weaker matches.
+Use:
 
-If nothing reliable is found, briefly state which source groups were checked. Do not claim that the resource does not exist solely because the configured sources returned no result.
+- `精确匹配` = strong identifier/title match
+- `疑似匹配` = weaker match
+- `元数据线索` = useful metadata found, but no verified magnet/torrent record
+
+If no verified magnet candidate is found, say so clearly and briefly state which source groups were checked. Do not turn metadata-only pages into magnet results.
 
 ## Maintenance
 
