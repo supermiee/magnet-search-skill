@@ -20,89 +20,78 @@ Remove `/magnet` before searching.
 
 The resource name supplied by the user is assumed to be accurate.
 
-**Do not rewrite, correct, reinterpret, translate, or "clean up" the resource name before searching.** Preserve the user's query exactly as the primary search query.
+Do not rewrite, correct, reinterpret, translate, or clean up the resource name before searching. Use the supplied query exactly as the primary search query.
 
-Only generate a minimal technical variant when necessary for search compatibility, such as:
-
-```text
-ADN-081 -> ADN081
-```
-
-Do not invent titles, actors, years, or identifiers that the user did not provide.
+Only allow a minimal technical variant when necessary for search compatibility, for example `ADN-081` → `ADN081`. Do not invent titles, actors, years, identifiers, or translations.
 
 ## Workflow
 
 ```text
 /magnet <query>
-  -> identify resource category
-  -> search the best 1-2 configured sources using the supplied query
-  -> if insufficient, search fallback sources
-  -> validate actual Torrent/Magnet metadata
+  -> identify category
+  -> choose the best 1-2 reachable sources
+  -> search using the supplied query
+  -> enough good results?
+       yes -> stop
+       no  -> use the next fallback source(s)
+  -> validate Torrent/Magnet metadata
   -> deduplicate by InfoHash
-  -> rank results
-  -> return best matches
+  -> rank
+  -> return best results
 ```
 
-Do not search every source by default.
+For personal use, keep the search narrow. Do not query every configured source unless the earlier sources are insufficient.
 
-## Resource categories
+## Categories and source preference
+
+The exact source list is maintained in `config/sources.yaml`.
 
 ### JAV / Japanese adult video
 
-Preferred sources:
+Prefer sources tagged `jav`, with specialist sources before general sources.
+
+Search order should normally start with:
 
 1. Sukebei Nyaa
 2. OneJAV
-3. JAVJunkies
-4. U9A9
-5. BTSOW
-
-If the supplied query is a catalog number, search that exact identifier first.
+3. U9A9
+4. BTSOW
 
 ### Chinese / Asian NSFW
 
-Preferred sources:
+Prefer sources tagged `asian` or `chinese`.
+
+Search order should normally start with:
 
 1. U9A9
 2. BTSOW
-3. Sehuatang
+3. Sukebei Nyaa
 4. Bitsearch
-5. SolidTorrents
-
-Use the supplied query as-is first.
 
 ### Adult anime / doujin / 2D
 
-Preferred sources:
+Prefer sources tagged `hentai`, `anime`, or `doujin`.
+
+Search order should normally start with:
 
 1. Sukebei Nyaa
 2. Nyaa
-3. U9A9
-4. BTSOW
-5. Bitsearch
+3. BTSOW
+4. Bitsearch
 
-Use the supplied query as-is first.
+### Fallback
 
-### General fallback
-
-Only use when specialist sources are insufficient:
-
-1. Bitsearch
-2. BT4G
-3. SolidTorrents
-4. 1337x
-5. TorrentGalaxy
-6. The Pirate Bay
+Use the next configured source with a suitable category only when specialist searches are insufficient. Do not automatically crawl a long list of general torrent sites.
 
 ## Source availability
 
 Use `config/sources.yaml` as the source registry.
 
-- `active`: usable source; still subject to normal access restrictions.
-- `redirect`: prefer `canonical_url` when present.
+- `active`: usable source.
+- `redirect`: prefer `canonical_url`.
 - `inconclusive`: availability was not established; re-check before relying on it.
 
-If a source is unreachable, skip it. Do not repeatedly retry one failed source.
+If a source is unreachable, skip it and move on. Do not repeatedly retry one failed source.
 
 ## Result validation
 
@@ -111,28 +100,23 @@ A result counts as a **usable Magnet result** only when the source provides eith
 - a complete Magnet URI containing an InfoHash, or
 - a verifiable InfoHash associated with a Torrent result.
 
-Do **not** treat the following as Magnet results:
-
-- movie/episode detail pages
-- subtitle pages
-- ordinary search-engine results
-- screenshots or preview pages
-- pages that only contain a title without Torrent metadata
+Do not treat movie/episode pages, subtitle pages, ordinary search-engine results, screenshots, preview pages, or title-only pages as Magnet results.
 
 Never construct or guess a Magnet URI from incomplete information.
 
-Metadata-only matches may be reported separately as `元数据线索`, but must never be presented as a usable Magnet.
+Metadata-only matches may be reported separately as `元数据线索`, but never as a usable Magnet.
 
 ## Ranking and deduplication
 
-Prefer, in order:
+Prefer:
 
 1. exact match to the user's supplied query
-2. complete Torrent metadata
-3. higher seed count
-4. newer result
+2. valid Torrent/Magnet metadata
+3. reasonable file size/completeness
+4. higher seed count
+5. newer result
 
-Use InfoHash as the primary deduplication key. If the same InfoHash appears on multiple sources, merge the sources into one result.
+Use InfoHash as the primary deduplication key. If the same InfoHash appears on multiple sources, merge them into one result.
 
 Do not let a high-seed but weakly matching result outrank a strong exact match merely because it has more seeds.
 
@@ -152,9 +136,9 @@ InfoHash:
 Magnet:
 ```
 
-Use `精确匹配` when the result matches the user's supplied resource name/identifier. Use `疑似匹配` only when the result differs from the supplied name but is otherwise plausibly related.
+Use `精确匹配` for strong matches to the supplied query and `疑似匹配` for weaker matches.
 
-If no usable Magnet is found, say so briefly and optionally report useful metadata-only clues separately. Do not claim that the resource does not exist merely because the configured sources returned no usable Magnet.
+If no usable Magnet is found, say so briefly and optionally report useful metadata-only clues separately. Do not claim that the resource does not exist solely because the configured sources returned no usable Magnet.
 
 ## Maintenance
 
