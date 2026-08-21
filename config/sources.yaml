@@ -1,84 +1,103 @@
 # Torrent/magnet source registry
 #
-# This file is intentionally separate from SKILL.md so source URLs and
-# priorities can be updated without changing the agent's search logic.
-# Verify availability and legality before use.
+# status is based on a direct web check performed on 2026-08-21.
+# active = page was reachable and returned usable HTML.
+# redirect = configured URL redirected to a live domain.
+# inconclusive = the checker could not establish availability; this is NOT
+# equivalent to a confirmed outage. Agents should re-check before use.
+
+checked_at: "2026-08-21"
+verification_method: "direct HTTPS page check"
 
 sources:
   - name: Sukebei Nyaa
     url: https://sukebei.nyaa.si/
     categories: [jav, hentai, anime, doujin]
     priority: 100
-    notes: "Specialized Nyaa index for adult/NSFW and doujin content."
+    status: inconclusive
+    notes: "Specialized Nyaa adult/NSFW and doujin index. Direct checker could not establish availability; re-check before use."
 
   - name: OneJAV
     url: https://onejav.com/
     categories: [jav]
     priority: 90
-    notes: "JAV-focused search/index site."
+    status: active
+    notes: "Direct check returned the site and current torrent listings."
 
   - name: JAVJunkies
     url: https://javjunkies.com/
     categories: [jav]
     priority: 80
-    notes: "JAV-focused source; verify current availability before use."
+    status: inconclusive
+    notes: "Direct checker could not establish availability; do not assume the domain is active without a fresh check."
 
   - name: U9A9
     url: https://u9a9.com/
     categories: [asian, chinese, jav]
     priority: 100
-    notes: "Asian/Chinese-oriented magnet search source."
+    status: active
+    notes: "Direct check returned the site and current dated listings."
 
   - name: BTSOW
     url: https://btsow.live/
     categories: [asian, chinese, general]
     priority: 90
-    notes: "General magnet search/aggregation source."
+    status: active
+    notes: "Direct HTTPS page was reachable."
 
   - name: Sehuatang
     url: https://www.sehuatang.net/
     categories: [asian, chinese]
     priority: 80
-    notes: "Chinese-language community/source; access may require an account or may vary by region."
+    status: active
+    notes: "Direct check reached the site. Availability/content may vary by region or access requirements."
 
   - name: Nyaa
     url: https://nyaa.si/
     categories: [anime, doujin, asian]
     priority: 90
-    notes: "Major anime/Asian torrent index."
+    status: inconclusive
+    notes: "Direct checker could not establish availability; re-check before use."
 
   - name: SolidTorrents
     url: https://solidtorrents.to/
     categories: [general, asian, jav, anime]
     priority: 70
-    notes: "General torrent search/index."
+    status: inconclusive
+    notes: "Direct checker could not establish availability; re-check before use."
 
   - name: Bitsearch
     url: https://bitsearch.to/
     categories: [general, asian, jav, anime]
     priority: 70
-    notes: "General torrent search; useful as a fallback."
+    status: redirect
+    canonical_url: https://bitsearch.eu/
+    notes: "Configured URL redirected to bitsearch.eu, which returned the Bitsearch site. Prefer the canonical redirected domain when possible."
 
   - name: BT4G
     url: https://bt4gprx.com/
     categories: [general, asian]
     priority: 60
-    notes: "General/DHT-oriented search source; verify the current domain before use."
+    status: active
+    notes: "Direct check returned the BT4G search engine."
 
   - name: 1337x
     url: https://1337x.to/
     categories: [general]
     priority: 60
-    notes: "General torrent index."
+    status: inconclusive
+    notes: "Direct checker could not establish availability; re-check before use."
 
   - name: TorrentGalaxy
     url: https://torrentgalaxy.to/
     categories: [general]
     priority: 55
-    notes: "General torrent index with strong video coverage."
+    status: inconclusive
+    notes: "Direct checker could not establish availability; re-check before use."
 
   - name: The Pirate Bay
     url: https://thepiratebay.org/
     categories: [general]
     priority: 50
-    notes: "General legacy torrent index; use as a last-resort fallback and verify the official/current domain."
+    status: inconclusive
+    notes: "Direct checker could not establish availability; re-check before use."
