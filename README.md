@@ -1,28 +1,34 @@
 # Magnet Search Skill
 
-A reusable AI-agent skill for finding and ranking torrent/magnet resources from multiple search sources.
+A small reusable AI-agent skill for **explicitly triggered** torrent/magnet search.
 
-## What it does
+## Trigger
 
-- Identifies the resource category
-- Extracts catalog numbers, titles, actors/authors and other identifiers
-- Generates multilingual/search-friendly query variants
-- Verifies source availability when freshness matters
-- Uses specialist sources before broad fallback sources
-- Expands the search only when necessary
-- Deduplicates results by InfoHash
-- Scores results by identity match, metadata quality and availability
-- Returns a concise ranked result set with confidence labels
+The skill activates only when the message starts with:
 
-## Source verification
+```text
+/magnet <resource name>
+```
 
-The source registry is [`config/sources.yaml`](config/sources.yaml).
+Examples:
 
-A direct HTTPS verification pass was performed on **2026-08-21**. The registry records `active`, `redirect`, and `inconclusive` status for every source. `inconclusive` means the checker could not establish availability; it does **not** mean the site is confirmed dead.
+```text
+/magnet SSIS-123
+/magnet 某资源名称
+```
 
-Current checks established direct reachability for U9A9, OneJAV, BTSOW, Sehuatang and BT4G. Bitsearch's configured URL redirected to `https://bitsearch.eu/`. Several other domains were inconclusive with the checker and should be re-checked immediately before use.
+Ordinary conversation, ordinary resource names, and standalone magnet/torrent URLs must not activate the skill.
 
-## Supported source groups
+## Workflow
+
+1. Identify the resource type.
+2. Choose the best 1-2 specialist sources.
+3. Search and evaluate the results.
+4. Expand to fallback sources only when necessary.
+5. Deduplicate by InfoHash.
+6. Return up to 5 ranked results.
+
+## Source groups
 
 ### JAV / Japanese adult video
 
@@ -37,34 +43,34 @@ Current checks established direct reachability for U9A9, OneJAV, BTSOW, Sehuatan
 - U9A9 — https://u9a9.com/
 - BTSOW — https://btsow.live/
 - Sehuatang — https://www.sehuatang.net/
-- SolidTorrents — https://solidtorrents.to/
 - Bitsearch — https://bitsearch.eu/
+- SolidTorrents — https://solidtorrents.to/
 
-### Anime / doujin
+### Adult anime / doujin
 
 - Sukebei Nyaa — https://sukebei.nyaa.si/
 - Nyaa — https://nyaa.si/
 - U9A9 — https://u9a9.com/
 - BTSOW — https://btsow.live/
-- SolidTorrents — https://solidtorrents.to/
+- Bitsearch — https://bitsearch.eu/
 
 ### General fallback
 
-- SolidTorrents — https://solidtorrents.to/
 - Bitsearch — https://bitsearch.eu/
 - BT4G — https://bt4gprx.com/
+- SolidTorrents — https://solidtorrents.to/
 - 1337x — https://1337x.to/
 - TorrentGalaxy — https://torrentgalaxy.to/
 - The Pirate Bay — https://thepiratebay.org/
 
-## Agent integration
+## Source registry
 
-Load `SKILL.md` as the agent's search behavior. Keep site/domain data in `config/sources.yaml` so sources can be updated independently.
+The authoritative machine-readable registry is [`config/sources.yaml`](config/sources.yaml). It contains source priority, category, availability status, and canonical redirect information.
 
-The agent should not blindly query every source. It should start with the most relevant currently reachable specialist source, evaluate the returned candidates, and broaden the search when confidence is insufficient.
+The latest registry verification pass is dated **2026-08-21**. `inconclusive` means availability could not be established by the checker; it does not mean the site is confirmed dead.
 
-## Legal and safety notice
+## Notes
 
-This project is a generic torrent/magnet search workflow. Users are responsible for complying with copyright law, local regulations, site terms, and the rights associated with any content they access. Do not use the workflow to bypass authentication, paywalls, CAPTCHAs, DRM, or other access controls.
+Do not query every source by default. Prefer the most relevant reachable source, then broaden only when the results are insufficient.
 
-Source availability and domains can change. Re-check sources before relying on them.
+Use only for resources the user is legally entitled to access. Respect copyright, local law, site terms, and access controls.
