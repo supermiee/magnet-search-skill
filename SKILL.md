@@ -4,7 +4,7 @@
 
 Use this skill when the user provides a resource name, title, catalog number, actor, author, or other identifying information and asks the agent to locate matching torrent/magnet resources.
 
-The skill is designed as a **search-and-rank workflow**, not a single-site lookup. The agent should identify the resource type, generate useful search variants, select the most relevant search sources, search in stages, deduplicate results by InfoHash, score matches, and return the strongest results.
+The skill is designed as a **search-and-rank workflow**, not a single-site lookup. The agent should identify the resource type, generate useful search variants, select the most relevant search sources, verify source availability when needed, search in stages, deduplicate results by InfoHash, score matches, and return the strongest results.
 
 > Use only for resources the user is legally entitled to access. Respect copyright, local law, site terms, and robots/access restrictions. Do not bypass authentication, paywalls, CAPTCHAs, DRM, or access controls.
 
@@ -17,6 +17,7 @@ User request
   -> normalize title / identifier
   -> generate search variants
   -> select source group
+  -> verify candidate source availability
   -> first-pass search
   -> evaluate result quality
   -> expand search only if necessary
@@ -27,13 +28,27 @@ User request
 
 Do not stop after one website returns no results. A failed search on one index is not evidence that the resource does not exist.
 
+## Source availability is mandatory
+
+The machine-readable source registry is `config/sources.yaml`. Each source has a `status` recorded by the latest verification pass.
+
+Use these rules:
+
+- `active`: safe to attempt, subject to normal request/access restrictions.
+- `redirect`: use `canonical_url` when present; otherwise follow the redirect and record the final domain.
+- `inconclusive`: the last checker could not establish availability. Do not describe the source as dead; perform a fresh check before relying on it.
+
+Do not blindly trust an old status. If the user asks for current availability, or a source is important to the search, perform a fresh HTTPS check first.
+
+If a configured source is unreachable, do not waste repeated attempts. Move to the next source and record the failure.
+
 ## Resource groups
 
 ### 1. JAV / Japanese adult video
 
 When the input clearly contains a Japanese catalog number or JAV-specific metadata, prioritize sources tagged `jav` in `config/sources.yaml`.
 
-Recommended order:
+Recommended order by configured priority and current availability:
 
 1. Sukebei Nyaa
 2. OneJAV
@@ -123,7 +138,7 @@ Do not rely on a Chinese translation when an original-language title or catalog 
 
 Do not blindly query every source.
 
-Start with the most likely specialist source. If it returns enough high-confidence results, stop. If it returns no results or only weak matches, broaden the search.
+Start with the most likely specialist source that is currently reachable. If it returns enough high-confidence results, stop. If it returns no results or only weak matches, broaden the search.
 
 Suggested thresholds:
 
@@ -223,12 +238,13 @@ If nothing reliable is found, report:
 - resource type inferred
 - query variants attempted
 - source groups checked
+- source availability status where relevant
 - whether results were exact, partial, or absent
 
 ## Source maintenance
 
-All source names, URLs, categories, priorities, and notes belong in `config/sources.yaml`.
+All source names, URLs, categories, priorities, status, canonical URLs, and notes belong in `config/sources.yaml`.
 
 When a source changes domain or becomes unavailable, update the configuration rather than rewriting this skill.
 
-Do not assume a configured source is currently online. When freshness matters, verify availability before relying on it.
+Run a fresh source verification before changing a source from `active` to `inconclusive` or removing it. A checker failure is not by itself proof of a permanent outage.
