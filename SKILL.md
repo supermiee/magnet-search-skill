@@ -26,7 +26,7 @@ The source-specific extraction method is defined in `config/sources.yaml`. **Fol
 mag <query>
   -> classify resource
   -> select 1-2 best available sources
-  -> use the source adapter
+  -> execute the source adapter exactly as configured
   -> extract candidate Magnet/InfoHash
   -> validate
   -> enough exact results?
@@ -41,32 +41,76 @@ Do not crawl all sources by default.
 
 ## Source adapter protocol
 
-Each source adapter defines four things:
+Each executable source adapter should explicitly define:
 
-1. `search`: how to submit the user's exact query to the site's normal search.
-2. `result`: where to find the matching Torrent result.
-3. `magnet`: how to extract the Magnet/InfoHash.
-4. `fallback`: what to do when no usable Magnet is exposed.
+```yaml
+adapter:
+  request:
+    method: GET | POST
+    url: "https://..."
+    query: {}
+    headers: {}
 
-Use the site normally. Do not bypass CAPTCHA, login, paywall, anti-bot protection, DRM, or other access controls.
+  response:
+    type: html | json
 
-### Generic extraction rule
+  results:
+    item_selector: "..."
+    fields:
+      title: {selector: "...", type: text}
+      detail_url: {selector: "...", type: url}
 
-When an adapter says `anchor`, inspect the result/detail HTML/DOM for links whose `href` starts with:
+  magnet:
+    strategy: direct | detail_page | json_field
+    selector: "..."
+    href_attribute: href
+    infohash_regex: "..."
+
+  pagination:
+    enabled: false
+    next_selector: null
+    max_pages: 2
+
+  fallback:
+    on_empty_results: next_source
+    on_parse_failure: next_source
+    max_detail_pages: 3
+```
+
+### Adapter execution
+
+1. Put the user's exact query into the configured request template.
+2. Call the configured `method` and `url` with the configured query/body parameters.
+3. Use the configured response parser (`html` or `json`).
+4. Extract result items with the configured `item_selector`.
+5. Extract `title` and `detail_url` using the configured field selectors.
+6. Apply the configured Magnet strategy:
+   - `direct`: extract Magnet directly from the result item.
+   - `detail_page`: open the configured detail URL once, then extract Magnet.
+   - `json_field`: read the configured JSON field.
+7. Validate the Magnet/InfoHash.
+8. Stop after the configured page/detail limits.
+9. On an empty result or parse failure, follow `fallback` instead of inventing another endpoint.
+
+If an adapter lacks a required request URL, parameter, selector, or extraction rule, mark the source `configuration_missing` and move to the next source.
+
+Do not invent API paths, URL parameters, CSS selectors, JSON fields, or hidden endpoints at runtime when the adapter is present.
+
+Use only normal, non-protected access. Do not bypass CAPTCHA, login, paywall, anti-bot protection, DRM, or other access controls.
+
+## Generic extraction rule
+
+When an adapter uses an `anchor` selector, inspect the configured result/detail DOM for links whose `href` starts with:
 
 ```text
 magnet:?xt=urn:btih:
 ```
 
-Extract the complete URI. Parse the InfoHash from the `xt=urn:btih:` value.
+Extract the complete URI and parse the InfoHash from the `xt=urn:btih:` value.
 
-When an adapter says `infohash`, accept a clearly identified InfoHash from the Torrent result and construct nothing unless the source explicitly exposes a Magnet URI. Never guess a Magnet from a title alone.
+When an adapter provides an InfoHash field, accept the explicitly exposed InfoHash as metadata. Do not fabricate a Magnet URI unless the source itself exposes one.
 
-### Page navigation rule
-
-If the search result itself does not contain a Magnet, open the matching Torrent/detail page once and apply the adapter's `magnet` rule there.
-
-Do not recursively crawl unrelated pages.
+Never infer a Magnet from a title, filename, size, or unrelated webpage.
 
 ## Resource categories
 
@@ -74,34 +118,27 @@ Do not recursively crawl unrelated pages.
 
 Prefer sources tagged `jav`.
 
-Order:
-
-1. Sukebei Nyaa
-2. OneJAV
-3. U9A9
-4. BTSOW
-
 ### Chinese / Asian NSFW
 
 Prefer sources tagged `asian` or `chinese`.
-
-Order:
-
-1. U9A9
-2. BTSOW
-3. Sukebei Nyaa
-4. Bitsearch
 
 ### Adult anime / doujin / 2D
 
 Prefer sources tagged `hentai`, `anime`, or `doujin`.
 
-Order:
+Use the priorities and adapter definitions in `config/sources.yaml` rather than hard-coding site behavior here.
 
-1. Sukebei Nyaa
-2. Nyaa
-3. BTSOW
-4. Bitsearch
+## Search breadth
+
+For personal use, start with the single highest-priority reachable specialist source.
+
+Only try the next source when:
+
+- no usable results were returned;
+- parsing failed;
+- or all returned candidates are weak matches.
+
+Do not query every source by default.
 
 ## Source availability
 
@@ -156,6 +193,8 @@ If nothing usable is found, briefly state which source adapters were attempted a
 
 ## Maintenance
 
-All site-specific URLs, priorities, availability status, and adapter instructions belong in `config/sources.yaml`.
+All site-specific URLs, priorities, availability status, and executable adapter instructions belong in `config/sources.yaml`.
 
-When a site's search flow or Magnet extraction changes, update its adapter there instead of adding ad-hoc instructions here.
+The generic adapter field specification is documented in `config/adapter-schema.yaml`.
+
+When a site's search flow or Magnet extraction changes, update its adapter in `config/sources.yaml` instead of adding ad-hoc instructions here.
