@@ -1,0 +1,56 @@
+# Source Adapter Schema
+#
+# Generic schema for describing how an agent should query a torrent/magnet
+# source without having to infer the request or parsing strategy at runtime.
+#
+# This file is a schema/example only. Fill source-specific endpoints and
+# selectors from sources you are authorized to use.
+
+adapter:
+  name: example-source
+  version: 1
+
+  request:
+    method: GET
+    url: "https://example.invalid/search"
+    query:
+      q: "{query}"
+    headers: {}
+    timeout_seconds: 15
+
+  response:
+    type: html  # html | json
+
+  results:
+    item_selector: "CSS_SELECTOR_FOR_RESULT"
+    fields:
+      title:
+        selector: "CSS_SELECTOR_FOR_TITLE"
+        type: text
+      detail_url:
+        selector: "CSS_SELECTOR_FOR_DETAIL_LINK"
+        type: url
+
+  magnet:
+    strategy: detail_page  # direct | detail_page | json_field
+    selector: 'a[href^="magnet:"]'
+    href_attribute: href
+    infohash_regex: "urn:btih:([A-Za-z0-9]+)"
+
+  validation:
+    require_magnet_or_infohash: true
+    reject_non_magnet_pages: true
+
+  pagination:
+    enabled: false
+    next_selector: null
+    max_pages: 2
+
+  fallback:
+    on_empty_results: next_source
+    on_parse_failure: next_source
+    max_detail_pages: 3
+
+  notes:
+    - "Do not invent missing selectors or endpoints at runtime."
+    - "If the adapter is incomplete, report configuration_missing and move to the next source."
