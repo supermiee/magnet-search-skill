@@ -1,10 +1,10 @@
 # Magnet Search Skill
 
-A small reusable AI-agent skill for **explicitly triggered** torrent/magnet search.
+A small reusable AI-agent skill for explicitly triggered Torrent/Magnet search.
 
 ## Trigger
 
-The skill activates only when the message starts with:
+Use:
 
 ```text
 mag <resource name>
@@ -13,28 +13,27 @@ mag <resource name>
 Examples:
 
 ```text
-mag SSIS-123
 mag ADN-081
+mag SSIS-123
 mag 某资源名称
 ```
 
-Ordinary conversation, ordinary resource names, standalone magnet/torrent URLs, and `/magnet` must not activate the skill.
+Ordinary conversation, unprefixed resource names, standalone Magnet URLs, and `/magnet` do not trigger the skill.
 
-Everything after the leading `mag ` is treated as the user's resource name.
+## Design
 
-## Workflow
+The user-provided resource name is assumed accurate and is searched as-is. The skill uses a small personal-use source set and **site adapters** stored in `config/sources.yaml`.
 
-1. Identify the resource type.
-2. Choose the best 1-2 reachable specialist sources.
-3. Search using the user's query as-is.
-4. Expand only when results are insufficient.
-5. Validate actual Torrent/Magnet metadata.
-6. Deduplicate by InfoHash.
-7. Return up to 5 ranked results.
+Each adapter predefines:
+
+- how to search the site
+- where the matching Torrent result is found
+- how to extract a Magnet URI or InfoHash
+- the one-step fallback when the search result does not expose the Magnet
+
+This prevents the agent from repeatedly spending tokens reasoning about how each website works.
 
 ## Source set
-
-The personal-use source registry is intentionally small:
 
 - Sukebei Nyaa — https://sukebei.nyaa.si/
 - OneJAV — https://onejav.com/
@@ -43,17 +42,33 @@ The personal-use source registry is intentionally small:
 - Nyaa — https://nyaa.si/
 - Bitsearch — https://bitsearch.eu/
 
-The authoritative machine-readable registry is [`config/sources.yaml`](config/sources.yaml). It contains source priority, category, availability status, and canonical redirect information.
+The authoritative machine-readable registry is [`config/sources.yaml`](config/sources.yaml).
 
-## Design principles
+## Search behavior
 
-- The user-provided resource name is assumed to be accurate.
-- Do not rewrite or reinterpret the query.
-- Keep source count small to reduce latency and maintenance.
-- Do not query every source by default.
-- A result is usable only when a complete Magnet URI or verifiable InfoHash is available.
-- Web pages, subtitle pages, screenshots, and metadata-only pages are not Magnet results.
+1. Classify the query.
+2. Pick the best 1-2 reachable specialist sources.
+3. Follow their adapter instructions.
+4. Validate a real Magnet URI or InfoHash.
+5. Stop when enough exact results are found.
+6. Otherwise move to the next source.
+7. Deduplicate by InfoHash.
 
-The latest source verification pass is dated **2026-08-21**. `inconclusive` means availability could not be established by the checker; it does not mean the site is confirmed dead.
+Do not crawl every source by default and do not invent site-specific scraping methods during a request.
+
+## Magnet validation
+
+A usable result must expose either:
+
+- a complete `magnet:?xt=urn:btih:...` URI, or
+- a clearly verifiable InfoHash attached to a Torrent result.
+
+A movie page, subtitle page, ordinary search result, screenshot, or title-only page is not a Magnet result.
+
+Never guess or synthesize a Magnet URI from incomplete data.
+
+## Verification
+
+The latest source verification pass is dated **2026-08-21**. `inconclusive` means the checker could not establish availability; it does not mean the site is confirmed dead.
 
 Use only for resources the user is legally entitled to access. Respect copyright, local law, site terms, and access controls.
