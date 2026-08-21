@@ -7,17 +7,20 @@ A small reusable AI-agent skill for **explicitly triggered** torrent/magnet sear
 The skill activates only when the message starts with:
 
 ```text
-/magnet <resource name>
+mag <resource name>
 ```
 
 Examples:
 
 ```text
-/magnet SSIS-123
-/magnet 某资源名称
+mag SSIS-123
+mag ADN-081
+mag 某资源名称
 ```
 
-Ordinary conversation, ordinary resource names, and standalone magnet/torrent URLs must not activate the skill.
+Ordinary conversation, ordinary resource names, standalone magnet/torrent URLs, and `/magnet` must not activate the skill.
+
+Everything after the leading `mag ` is treated as the user's resource name.
 
 ## Workflow
 
