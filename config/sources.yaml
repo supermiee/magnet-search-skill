@@ -1,8 +1,7 @@
 # Torrent/magnet source registry
-#
-# Small personal-use source set. Keep this list intentionally short so the
-# agent spends most requests on high-value sources rather than broad crawling.
-# Status reflects the latest verification pass and is not permanent.
+# Small personal-use source set. Keep this list intentionally short.
+# Adapter fields are instructions for the agent so it does not re-invent
+# site-specific search/extraction logic for every request.
 
 checked_at: "2026-08-21"
 verification_method: "direct HTTPS page check"
@@ -13,13 +12,23 @@ sources:
     categories: [jav, hentai, anime, doujin]
     priority: 100
     status: inconclusive
-    notes: "Primary specialist source for Japanese adult/torrent content. Re-check before use if the current status is inconclusive."
+    adapter:
+      search: site-native-search
+      result: search-result-or-detail-page
+      magnet: anchor-href-starts-with-magnet-uri
+      fallback: open-matching-detail-page-once
+    notes: "Primary specialist source for Japanese adult/torrent content. Re-check before use if status is inconclusive."
 
   - name: OneJAV
     url: https://onejav.com/
     categories: [jav]
     priority: 95
     status: active
+    adapter:
+      search: site-native-search
+      result: matching-JAV-result
+      magnet: inspect-result-or-detail-page-for-magnet-or-infohash
+      fallback: open-matching-detail-page-once
     notes: "JAV-focused source; direct check returned current listings."
 
   - name: U9A9
@@ -27,6 +36,11 @@ sources:
     categories: [asian, chinese, jav]
     priority: 100
     status: active
+    adapter:
+      search: site-native-search
+      result: matching-magnet-result
+      magnet: inspect-result-page-for-magnet-uri-or-infohash
+      fallback: open-matching-detail-page-once
     notes: "High-value Asian/Chinese-oriented magnet source; direct check returned current listings."
 
   - name: BTSOW
@@ -34,6 +48,11 @@ sources:
     categories: [asian, chinese, general]
     priority: 90
     status: active
+    adapter:
+      search: site-native-search
+      result: matching-torrent-result
+      magnet: inspect-result-or-detail-page-for-magnet-uri-or-infohash
+      fallback: open-matching-detail-page-once
     notes: "General magnet search source; direct HTTPS page was reachable."
 
   - name: Nyaa
@@ -41,7 +60,12 @@ sources:
     categories: [anime, doujin, asian]
     priority: 90
     status: inconclusive
-    notes: "Anime/Asian specialist source. Re-check before use if the current status is inconclusive."
+    adapter:
+      search: site-native-search
+      result: matching-torrent-result
+      magnet: anchor-href-starts-with-magnet-uri
+      fallback: open-matching-detail-page-once
+    notes: "Anime/Asian specialist source. Re-check before use if status is inconclusive."
 
   - name: Bitsearch
     url: https://bitsearch.to/
@@ -49,4 +73,20 @@ sources:
     categories: [general, asian, jav, anime]
     priority: 70
     status: redirect
+    adapter:
+      search: site-native-search
+      result: matching-torrent-result
+      magnet: inspect-result-or-detail-page-for-magnet-uri-or-infohash
+      fallback: open-matching-detail-page-once
     notes: "Configured URL redirects to the current Bitsearch domain; prefer canonical_url."
+
+# Adapter vocabulary
+#
+# search: site-native-search = use the site's own search UI/query mechanism.
+# result: select the result whose title/identifier matches the user's exact query.
+# magnet: anchor-href-starts-with-magnet-uri = find a link whose href begins
+#         with magnet:?xt=urn:btih: and keep the complete URI.
+# magnet: inspect-*-for-magnet-uri-or-infohash = inspect the result/detail
+#         page for a complete Magnet URI or a clearly labeled InfoHash.
+# fallback: open-matching-detail-page-once = if the result page has no Magnet,
+#          open the matching detail/torrent page once; do not recursively crawl.
