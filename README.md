@@ -22,55 +22,35 @@ Ordinary conversation, ordinary resource names, and standalone magnet/torrent UR
 ## Workflow
 
 1. Identify the resource type.
-2. Choose the best 1-2 specialist sources.
-3. Search and evaluate the results.
-4. Expand to fallback sources only when necessary.
-5. Deduplicate by InfoHash.
-6. Return up to 5 ranked results.
+2. Choose the best 1-2 reachable specialist sources.
+3. Search using the user's query as-is.
+4. Expand only when results are insufficient.
+5. Validate actual Torrent/Magnet metadata.
+6. Deduplicate by InfoHash.
+7. Return up to 5 ranked results.
 
-## Source groups
+## Source set
 
-### JAV / Japanese adult video
+The personal-use source registry is intentionally small:
 
 - Sukebei Nyaa — https://sukebei.nyaa.si/
 - OneJAV — https://onejav.com/
-- JAVJunkies — https://javjunkies.com/
 - U9A9 — https://u9a9.com/
 - BTSOW — https://btsow.live/
-
-### Chinese / Asian
-
-- U9A9 — https://u9a9.com/
-- BTSOW — https://btsow.live/
-- Sehuatang — https://www.sehuatang.net/
-- Bitsearch — https://bitsearch.eu/
-- SolidTorrents — https://solidtorrents.to/
-
-### Adult anime / doujin
-
-- Sukebei Nyaa — https://sukebei.nyaa.si/
 - Nyaa — https://nyaa.si/
-- U9A9 — https://u9a9.com/
-- BTSOW — https://btsow.live/
 - Bitsearch — https://bitsearch.eu/
-
-### General fallback
-
-- Bitsearch — https://bitsearch.eu/
-- BT4G — https://bt4gprx.com/
-- SolidTorrents — https://solidtorrents.to/
-- 1337x — https://1337x.to/
-- TorrentGalaxy — https://torrentgalaxy.to/
-- The Pirate Bay — https://thepiratebay.org/
-
-## Source registry
 
 The authoritative machine-readable registry is [`config/sources.yaml`](config/sources.yaml). It contains source priority, category, availability status, and canonical redirect information.
 
-The latest registry verification pass is dated **2026-08-21**. `inconclusive` means availability could not be established by the checker; it does not mean the site is confirmed dead.
+## Design principles
 
-## Notes
+- The user-provided resource name is assumed to be accurate.
+- Do not rewrite or reinterpret the query.
+- Keep source count small to reduce latency and maintenance.
+- Do not query every source by default.
+- A result is usable only when a complete Magnet URI or verifiable InfoHash is available.
+- Web pages, subtitle pages, screenshots, and metadata-only pages are not Magnet results.
 
-Do not query every source by default. Prefer the most relevant reachable source, then broaden only when the results are insufficient.
+The latest source verification pass is dated **2026-08-21**. `inconclusive` means availability could not be established by the checker; it does not mean the site is confirmed dead.
 
 Use only for resources the user is legally entitled to access. Respect copyright, local law, site terms, and access controls.
