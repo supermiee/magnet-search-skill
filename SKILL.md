@@ -2,9 +2,7 @@
 
 ## Trigger
 
-Activate this skill **only when the user message starts with `mag `** (the word `mag` followed by a space).
-
-Examples:
+Activate only when the user message starts with `mag `.
 
 ```text
 mag SSIS-123
@@ -12,45 +10,71 @@ mag ADN-081
 mag 完整资源名称
 ```
 
-Do not activate for ordinary conversation, an unprefixed resource name, a casual question, a standalone magnet/torrent URL, or `/magnet`.
+Do not activate for normal conversation, an unprefixed resource name, a standalone Magnet URL, or `/magnet`.
 
-Remove the leading `mag ` before searching. Treat everything after `mag ` as the user's resource name.
+Everything after `mag ` is the resource name. Assume it is accurate. Search it as-is. Do not rewrite, translate, correct, or invent metadata. A minimal technical variant such as `ADN-081` → `ADN081` is allowed only when needed by a source.
 
-## Assumption
+## Goal
 
-The resource name supplied by the user is assumed to be accurate.
+Find real Torrent/Magnet results efficiently.
 
-Do not rewrite, correct, reinterpret, translate, or clean up the resource name before searching. Use the supplied query exactly as the primary search query.
+The source-specific extraction method is defined in `config/sources.yaml`. **Follow that adapter; do not invent a new scraping strategy during each request.**
 
-Only allow a minimal technical variant when necessary for search compatibility, for example `ADN-081` → `ADN081`. Do not invent titles, actors, years, identifiers, or translations.
-
-## Workflow
+## Deterministic workflow
 
 ```text
 mag <query>
-  -> identify category
-  -> choose the best 1-2 reachable sources
-  -> search using the supplied query
-  -> enough good results?
+  -> classify resource
+  -> select 1-2 best available sources
+  -> use the source adapter
+  -> extract candidate Magnet/InfoHash
+  -> validate
+  -> enough exact results?
        yes -> stop
-       no  -> use the next fallback source(s)
-  -> validate Torrent/Magnet metadata
+       no  -> next source
   -> deduplicate by InfoHash
   -> rank
-  -> return best results
+  -> return up to 5
 ```
 
-For personal use, keep the search narrow. Do not query every configured source unless the earlier sources are insufficient.
+Do not crawl all sources by default.
 
-## Categories and source preference
+## Source adapter protocol
 
-The exact source list is maintained in `config/sources.yaml`.
+Each source adapter defines four things:
+
+1. `search`: how to submit the user's exact query to the site's normal search.
+2. `result`: where to find the matching Torrent result.
+3. `magnet`: how to extract the Magnet/InfoHash.
+4. `fallback`: what to do when no usable Magnet is exposed.
+
+Use the site normally. Do not bypass CAPTCHA, login, paywall, anti-bot protection, DRM, or other access controls.
+
+### Generic extraction rule
+
+When an adapter says `anchor`, inspect the result/detail HTML/DOM for links whose `href` starts with:
+
+```text
+magnet:?xt=urn:btih:
+```
+
+Extract the complete URI. Parse the InfoHash from the `xt=urn:btih:` value.
+
+When an adapter says `infohash`, accept a clearly identified InfoHash from the Torrent result and construct nothing unless the source explicitly exposes a Magnet URI. Never guess a Magnet from a title alone.
+
+### Page navigation rule
+
+If the search result itself does not contain a Magnet, open the matching Torrent/detail page once and apply the adapter's `magnet` rule there.
+
+Do not recursively crawl unrelated pages.
+
+## Resource categories
 
 ### JAV / Japanese adult video
 
-Prefer sources tagged `jav`, with specialist sources before general sources.
+Prefer sources tagged `jav`.
 
-Search order should normally start with:
+Order:
 
 1. Sukebei Nyaa
 2. OneJAV
@@ -61,7 +85,7 @@ Search order should normally start with:
 
 Prefer sources tagged `asian` or `chinese`.
 
-Search order should normally start with:
+Order:
 
 1. U9A9
 2. BTSOW
@@ -72,59 +96,49 @@ Search order should normally start with:
 
 Prefer sources tagged `hentai`, `anime`, or `doujin`.
 
-Search order should normally start with:
+Order:
 
 1. Sukebei Nyaa
 2. Nyaa
 3. BTSOW
 4. Bitsearch
 
-### Fallback
-
-Use the next configured source with a suitable category only when specialist searches are insufficient. Do not automatically crawl a long list of general torrent sites.
-
 ## Source availability
 
-Use `config/sources.yaml` as the source registry.
+Read `config/sources.yaml` before searching.
 
-- `active`: usable source.
-- `redirect`: prefer `canonical_url`.
-- `inconclusive`: availability was not established; re-check before relying on it.
+- `active`: use normally.
+- `redirect`: use `canonical_url`.
+- `inconclusive`: perform one fresh availability check before relying on it.
 
-If a source is unreachable, skip it and move on. Do not repeatedly retry one failed source.
+If the source fails, skip it and continue. Do not repeatedly retry the same source.
 
 ## Result validation
 
-A result counts as a **usable Magnet result** only when the source provides either:
+A usable result must contain:
 
-- a complete Magnet URI containing an InfoHash, or
-- a verifiable InfoHash associated with a Torrent result.
+- a complete Magnet URI with an InfoHash, or
+- a clearly verifiable InfoHash attached to a Torrent result.
 
-Do not treat movie/episode pages, subtitle pages, ordinary search-engine results, screenshots, preview pages, or title-only pages as Magnet results.
+Do not treat movie pages, subtitle pages, ordinary web-search results, screenshots, preview pages, or title-only pages as Magnet results.
 
-Never construct or guess a Magnet URI from incomplete information.
-
-Metadata-only matches may be reported separately as `元数据线索`, but never as a usable Magnet.
+Never construct or guess a Magnet URI from incomplete data.
 
 ## Ranking and deduplication
 
-Prefer:
+Priority order:
 
-1. exact match to the user's supplied query
+1. exact match to the user's query
 2. valid Torrent/Magnet metadata
-3. reasonable file size/completeness
+3. plausible file size/completeness
 4. higher seed count
 5. newer result
 
-Use InfoHash as the primary deduplication key. If the same InfoHash appears on multiple sources, merge them into one result.
-
-Do not let a high-seed but weakly matching result outrank a strong exact match merely because it has more seeds.
+Use InfoHash as the primary deduplication key. Merge duplicate InfoHashes from different sources.
 
 ## Output
 
-Return up to 5 unique usable Magnet results.
-
-For each result show:
+Return up to 5 unique usable results.
 
 ```text
 Title:
@@ -136,12 +150,12 @@ InfoHash:
 Magnet:
 ```
 
-Use `精确匹配` for strong matches to the supplied query and `疑似匹配` for weaker matches.
+Use `精确匹配` or `疑似匹配` only; do not present metadata-only clues as usable Magnets.
 
-If no usable Magnet is found, say so briefly and optionally report useful metadata-only clues separately. Do not claim that the resource does not exist solely because the configured sources returned no usable Magnet.
+If nothing usable is found, briefly state which source adapters were attempted and stop.
 
 ## Maintenance
 
-Keep source names, URLs, categories, priorities, status, canonical URLs, and notes in `config/sources.yaml`.
+All site-specific URLs, priorities, availability status, and adapter instructions belong in `config/sources.yaml`.
 
-Do not hard-code source URLs in this file.
+When a site's search flow or Magnet extraction changes, update its adapter there instead of adding ad-hoc instructions here.
