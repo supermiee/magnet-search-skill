@@ -2,19 +2,19 @@
 
 ## Trigger
 
-Activate this skill **only when the user message starts with `/magnet`**.
+Activate this skill **only when the user message starts with `mag `** (the word `mag` followed by a space).
 
 Examples:
 
 ```text
-/magnet SSIS-123
-/magnet ADN-081
-/magnet 完整资源名称
+mag SSIS-123
+mag ADN-081
+mag 完整资源名称
 ```
 
-Do not activate for ordinary conversation, an unprefixed resource name, a casual question, or a standalone magnet/torrent URL.
+Do not activate for ordinary conversation, an unprefixed resource name, a casual question, a standalone magnet/torrent URL, or `/magnet`.
 
-Remove `/magnet` before searching.
+Remove the leading `mag ` before searching. Treat everything after `mag ` as the user's resource name.
 
 ## Assumption
 
@@ -27,7 +27,7 @@ Only allow a minimal technical variant when necessary for search compatibility, 
 ## Workflow
 
 ```text
-/magnet <query>
+mag <query>
   -> identify category
   -> choose the best 1-2 reachable sources
   -> search using the supplied query
